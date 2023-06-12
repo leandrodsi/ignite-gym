@@ -10,12 +10,16 @@ The application allows users to view physical exercises categorized by muscle gr
 
 ## **Screenshots**
 
+<div>
 <img src="./md-assets/sign-in.png" width="150" />
 <img src="./md-assets/sign-up.png" width="150" />
 <img src="./md-assets/home.png" width="150" />
+</div>
+<div>
 <img src="./md-assets/history.png" width="150" />
 <img src="./md-assets/profile.png" width="150" />
 <img src="./md-assets/exercise.png" width="150" />
+</div>
 
 ## **Prerequisites**
 
