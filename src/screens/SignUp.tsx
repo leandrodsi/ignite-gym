@@ -1,6 +1,14 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigation } from "@react-navigation/native";
-import { Center, Heading, Image, ScrollView, Text, VStack } from "native-base";
+import {
+  Center,
+  Heading,
+  Image,
+  ScrollView,
+  Text,
+  VStack,
+  useToast,
+} from "native-base";
 import { Controller, useForm } from "react-hook-form";
 import * as yup from "yup";
 
@@ -9,6 +17,10 @@ import LogoSvg from "@assets/logo.svg";
 
 import { Button } from "@components/Button";
 import { Input } from "@components/Input";
+import { useAuth } from "@hooks/useAuth";
+import { api } from "@services/api";
+import { AppError } from "@utils/AppError";
+import { useState } from "react";
 
 export type FormDataProps = {
   name: string;
@@ -31,6 +43,8 @@ const signUpSchema = yup.object({
 });
 
 export const SignUp = () => {
+  const { signIn } = useAuth();
+  const toast = useToast();
   const navigation = useNavigation();
 
   const {
@@ -41,17 +55,33 @@ export const SignUp = () => {
     resolver: yupResolver(signUpSchema),
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const handleSignUp = ({
-    name,
-    email,
-    password,
-    password_confirm,
-  }: FormDataProps) => {
-    console.log("FORM", { name, email, password, password_confirm });
+  const handleSignUp = async ({ name, email, password }: FormDataProps) => {
+    try {
+      setIsLoading(true);
+
+      await api.post("users", { name, email, password });
+
+      signIn(email, password);
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError
+        ? error.message
+        : "Não foi possível criar a conta. Tente novamente mais tarde.";
+
+      setIsLoading(false);
+
+      toast.show({
+        title,
+        placement: "top",
+        bgColor: "red.500",
+      });
+    }
   };
 
   return (
@@ -117,8 +147,8 @@ export const SignUp = () => {
                 onChangeText={onChange}
                 value={value}
                 placeholder="Senha"
+                autoCapitalize="none"
                 errorMessage={errors.password?.message}
-                secureTextEntry
               />
             )}
           />
@@ -133,8 +163,8 @@ export const SignUp = () => {
                 placeholder="Confirme a senha"
                 onSubmitEditing={handleSubmit(handleSignUp)}
                 returnKeyType="send"
+                autoCapitalize="none"
                 errorMessage={errors.password_confirm?.message}
-                secureTextEntry
               />
             )}
           />
@@ -142,6 +172,7 @@ export const SignUp = () => {
           <Button
             label="Criar e acessar"
             onPress={handleSubmit(handleSignUp)}
+            isLoading={isLoading}
           />
         </Center>
 

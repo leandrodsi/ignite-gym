@@ -1,12 +1,23 @@
-import { Center, Heading, Image, ScrollView, Text, VStack } from "native-base";
+import {
+  Center,
+  Heading,
+  Image,
+  ScrollView,
+  Text,
+  VStack,
+  useToast,
+} from "native-base";
 
 import BackgroundImg from "@assets/background.png";
 import LogoSvg from "@assets/logo.svg";
 import { Button } from "@components/Button";
 import { Input } from "@components/Input";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useAuth } from "@hooks/useAuth";
 import { useNavigation } from "@react-navigation/native";
 import { AuthNavigatorRoutesProps } from "@routes/auth.routes";
+import { AppError } from "@utils/AppError";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as yup from "yup";
 
@@ -24,6 +35,8 @@ const signInSchema = yup.object({
 });
 
 export const SignIn = () => {
+  const toast = useToast();
+  const { signIn } = useAuth();
   const navigation = useNavigation<AuthNavigatorRoutesProps>();
 
   const {
@@ -34,12 +47,32 @@ export const SignIn = () => {
     resolver: yupResolver(signInSchema),
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleNewAccount = () => {
     navigation.navigate("signUp");
   };
 
-  const handleSignIn = ({ email, password }: FormDataProps) => {
-    console.log({ email, password });
+  const handleSignIn = async ({ email, password }: FormDataProps) => {
+    try {
+      setIsLoading(true);
+      await signIn(email, password);
+      toast.closeAll();
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+
+      const title = isAppError
+        ? error.message
+        : "Não foi possível entrar. Tente novamente mais tarde.";
+
+      setIsLoading(false);
+
+      toast.show({
+        title,
+        placement: "top",
+        bgColor: "red.500",
+      });
+    }
   };
 
   return (
@@ -98,7 +131,11 @@ export const SignIn = () => {
             )}
           />
 
-          <Button label="Acessar" onPress={handleSubmit(handleSignIn)} />
+          <Button
+            label="Acessar"
+            onPress={handleSubmit(handleSignIn)}
+            isLoading={isLoading}
+          />
         </Center>
 
         <Center mt={24}>
